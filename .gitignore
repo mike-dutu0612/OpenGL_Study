@@ -1,0 +1,60 @@
+# =====================
+# Build / CMake
+# =====================
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# =====================
+# Executables / binaries
+# =====================
+bin/
+*.out
+*.exe
+*.elf
+*.app
+
+# =====================
+# Object files
+# =====================
+*.o
+*.obj
+*.lo
+*.a
+*.so
+*.so.*
+*.dll
+*.dylib
+
+# =====================
+# Editor / IDE
+# =====================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# =====================
+# OS / system
+# =====================
+.DS_Store
+Thumbs.db
+
+# =====================
+# Logs
+# =====================
+*.log
+
+# =====================
+# Shell scripts runtime artifacts
+# =====================
+*.pid
+
+# =====================
+# WSL / Linux temp
+# =====================
+*.tmp
