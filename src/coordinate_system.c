@@ -10,11 +10,11 @@
 #include <cglm/cglm.h>
 
 float vertices[] = {
-    // 位置                       颜色                        纹理坐标  
-     0.5f,  0.5f, 0.0f,         1.0f, 0.0f, 0.0f,           1.0f, 1.0f, 
-     0.5f, -0.5f, 0.0f,         0.0f, 1.0f, 0.0f,           1.0f, 0.0f, 
-    -0.5f, -0.5f, 0.0f,         0.0f, 0.0f, 1.0f,           0.0f, 0.0f, 
-    -0.5f,  0.5f, 0.0f,         1.0f, 1.0f, 0.0f,           0.0f, 1.0f,
+    // 位置                              纹理坐标  
+     0.5f,  0.5f, 0.0f,                1.0f, 1.0f, 
+     0.5f, -0.5f, 0.0f,                1.0f, 0.0f, 
+    -0.5f, -0.5f, 0.0f,                0.0f, 0.0f, 
+    -0.5f,  0.5f, 0.0f,                0.0f, 1.0f,
 };
 
 unsigned int indices[] = 
@@ -24,15 +24,24 @@ unsigned int indices[] =
 };
 
 
-float borderColor[] = {1.0f, 1.0f, 0.0f, 1.0f};
-
-
-
 
 static void framebuffer_size_callback(GLFWwindow* window, int w, int h)
 {
     glViewport(0, 0, w, h);
 }
+
+static void processInput(GLFWwindow *window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+}
+
+// settings
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
+
+
+
 
 int main(void)
 {
@@ -46,7 +55,7 @@ int main(void)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "transform Test", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(800, 600, "coordinatek_system Test", NULL, NULL);
     if (!window) {
         fprintf(stderr, "Failed to create window\n");
         glfwTerminate();
@@ -62,13 +71,13 @@ int main(void)
         return -1;
     }
 
-    /* ===== 测试 textures 模块 ===== */
-    Shader t_textures = shader_create(
-        "../shaders/transform.vert",
-        "../shaders/transform.frag"
+    /* ===== 测试 coordinate_system 模块 ===== */
+    Shader coordinatek_system = shader_create(
+        "../shaders/coordinate_system.vert",
+        "../shaders/coordinate_system.frag"
     );
 
-    printf("t_textures program id = %u\n", t_textures.id);
+    printf("coordinatek_system program id = %u\n", coordinatek_system.id);
 
     unsigned int VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
@@ -84,14 +93,11 @@ int main(void)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // 位置属性（索引0）：从第0个float开始，偏移0
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(0 * sizeof(float)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(0 * sizeof(float)));
     glEnableVertexAttribArray(0);
-    // 颜色属性（索引1）：从第3个float开始，偏移3
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
     // 纹理坐标属性（索引2）：从第6个float开始，偏移6
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     unsigned int texture1;
     glGenTextures(1, &texture1);
@@ -148,22 +154,36 @@ int main(void)
     /* 主循环 */
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
+        processInput(window);
 
-        //变换
-        mat4 transform;
-        glm_mat4_identity(transform);
+        mat4 model;         // cglm的矩阵类型（float[16]）
+        mat4 view;
+        mat4 projection;
 
-        vec3 translate = {0.5f, -0.5f, 0.0f};
-        glm_translate(transform, translate);
+        // 1. 初始化矩阵为单位矩阵
+        glm_mat4_identity(model);
+        glm_mat4_identity(view);
+        glm_mat4_identity(projection);
 
-        float time = (float)glfwGetTime();
-        glm_rotate(transform, time, (vec3){0.0f, 0.0f, 1.0f});
+        // 2. 模型矩阵：绕X轴旋转-55度
+        glm_rotate(model, glm_rad(-55.0f), (vec3){1.0f, 0.0f, 0.0f});
 
-        vec3 scale = {0.8f, 0.8f, 0.8f};
-        glm_scale(transform, scale);
+        // 3. 视图矩阵：沿Z轴平移-3.0f
+        glm_translate(view, (vec3){0.0f, 0.0f, -3.0f});
 
-        int transformLoc = glGetUniformLocation(t_textures.id, "transform");
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, (const float*)transform);
+        // 4. 投影矩阵：透视投影
+        glm_perspective(glm_rad(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f, projection);
+
+        // 6. 获取uniform变量位置（核心：替代setMat4的关键）
+        unsigned int modelLoc = glGetUniformLocation(coordinatek_system.id, "model");
+        unsigned int viewLoc  = glGetUniformLocation(coordinatek_system.id, "view");
+        unsigned int projLoc  = glGetUniformLocation(coordinatek_system.id, "projection");
+
+        // 7. 传递矩阵到着色器（纯OpenGL原生方式，无自定义方法）
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, (const float*)model);   // 直接传入cglm矩阵
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, (const float*)view);     // cglm mat4是float数组，无需额外处理
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, (const float*)projection);
+
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -172,16 +192,16 @@ int main(void)
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
         glBindVertexArray(VAO);
-        shader_use(&t_textures);
-        glUniform1i(glGetUniformLocation(t_textures.id, "texture1"), 0);
-        glUniform1i(glGetUniformLocation(t_textures.id, "texture2"), 1);
+        shader_use(&coordinatek_system);
+        glUniform1i(glGetUniformLocation(coordinatek_system.id, "texture1"), 0);
+        glUniform1i(glGetUniformLocation(coordinatek_system.id, "texture2"), 1);
         //glDrawArrays(GL_TRIANGLES, 0, 3);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         
         glfwSwapBuffers(window);
     }
 
-    shader_destroy(&t_textures);
+    shader_destroy(&coordinatek_system);
     glfwTerminate();
     return 0;
 }
