@@ -6,6 +6,3 @@
 //2.远程有文件，但是本地删除了文件
 //hjfdfsdfkl
 //dafnkllsfj
-//sdfklas
-//sdaflkn
-//sasdfsa
